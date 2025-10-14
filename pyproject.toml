@@ -15,7 +15,9 @@ render-smiles = "render_smiles.main:main"
 [dependency-groups]
 dev = [
     "ruff>=0.14.0",
+    "pytest>=8.0.0",
 ]
 
 [tool.ruff]
 line-length = 100
+

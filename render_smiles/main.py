@@ -9,8 +9,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input", help="File containing a SMILES string")
     group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument("--svg", dest="svg", action="store_true", default=True, help="Output SVG files (default)")
-    group.add_argument("--png", dest="png", action="store_true", default=False, help="Output PNG files")
+    group.add_argument(
+        "--svg", dest="svg", action="store_true", default=True, help="Output SVG files (default)"
+    )
+    group.add_argument(
+        "--png", dest="png", action="store_true", default=False, help="Output PNG files"
+    )
     args = parser.parse_args()
     print(args)
 
@@ -26,6 +30,7 @@ def main():
 
 Sample = namedtuple("Sample", ["smiles", "mol", "svg", "svg_colored"])
 
+
 def create_sample(smiles: str):
     mol = renderer.create_mol(smiles)
     options = renderer.SVGOptions()
@@ -34,11 +39,13 @@ def create_sample(smiles: str):
     svg_colored = postprocessing.color_instances(svg)
     return Sample(smiles, mol, svg, svg_colored)
 
+
 def output_svg(sample: Sample, input_path: Path):
     with open(input_path.with_suffix(".svg"), "w") as f:
         f.write(sample.svg)
     with open(input_path.parent / (input_path.stem + "_colored.svg"), "w") as f:
         f.write(sample.svg_colored)
+
 
 def output_png(sample: Sample, input_path: Path):
     image = renderer.svg_to_pil(sample.svg)

@@ -121,6 +121,10 @@ def get_bond_index(element: ElementTree.Element):
 
 
 def unique_colors():
+    """
+    Generate a sequence of unique colors (at least 2500 unique colors).
+    """
+
     def hsv_to_rgb(h, s, v) -> tuple[int, int, int]:
         i = int(h * 6)
         f = h * 6 - i
@@ -143,11 +147,21 @@ def unique_colors():
             return (v, p, q)
 
     def generate_colors():
+        sat_offset = 0.0
         hue = 0
+        val_offset = 0.0
         golden_ratio = 0.618033988749895
         while True:
             hue = (hue + golden_ratio) % 1
-            rgb = hsv_to_rgb(hue, 0.8, 0.95)
+            rgb = hsv_to_rgb(hue, 0.5 + sat_offset * 0.5, 0.5 * val_offset + 0.5)
+            yield f"#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}"
+
+            sat_offset = (sat_offset + golden_ratio * 3) % 1
+            rgb = hsv_to_rgb(hue, 0.5 + sat_offset * 0.5, 0.5 * val_offset + 0.5)
+            yield f"#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}"
+
+            val_offset = (val_offset + golden_ratio * 11) % 1
+            rgb = hsv_to_rgb(hue, 0.5 + sat_offset * 0.5, 0.5 * val_offset + 0.5)
             yield f"#{int(rgb[0] * 255):02x}{int(rgb[1] * 255):02x}{int(rgb[2] * 255):02x}"
 
     return generate_colors()

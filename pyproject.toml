@@ -1,5 +1,5 @@
 [project]
-name = "smile"
+name = "render-smiles"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
@@ -8,6 +8,9 @@ dependencies = [
     "cairosvg>=2.8.2",
     "rdkit>=2025.9.1",
 ]
+
+[project.scripts]
+render-smiles = "render_smiles.main:main"
 
 [dependency-groups]
 dev = [

@@ -24,6 +24,9 @@ def color_instances(svg: str):
             style_dict = dict(s.split(":") for s in style.split(";") if s)
             if "stroke" in style_dict:
                 style_dict["stroke"] = color
+
+            if "fill" in style_dict and style_dict["fill"] != "none":
+                style_dict["fill"] = color
             style = ";".join(f"{k}:{v}" for k, v in style_dict.items())
             element.set("style", style)
 
@@ -43,6 +46,7 @@ def post_process_svg(svg: str, mol: Chem.Mol) -> str:
     Non-atom/bond paths are removed from the SVG.
     """
     bond_types = [bond.GetBondType() for bond in mol.GetBonds()]
+    bond_atoms = [(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()) for bond in mol.GetBonds()]
     atom_symbols = [atom.GetSymbol() for atom in mol.GetAtoms()]
     instances = []
 
@@ -62,6 +66,7 @@ def post_process_svg(svg: str, mol: Chem.Mol) -> str:
             attrib = {
                 "instance-class": str(bond_types[bond_index]),
                 "instance-id": str(instance_id),
+                "bond-atoms": f"{bond_atoms[bond_index][0]}-{bond_atoms[bond_index][1]}",
             }
             attrib.update(element.attrib)
             element.attrib = attrib

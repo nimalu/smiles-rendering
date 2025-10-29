@@ -1,12 +1,6 @@
-from dataclasses import dataclass
 from rdkit import Chem
 from rdkit.Chem.Draw import rdMolDraw2D
-
-
-@dataclass
-class SVGOptions:
-    width: int = 500
-    height: int = 500
+from . import Options
 
 
 def create_mol(smiles: str) -> Chem.Mol:
@@ -15,9 +9,21 @@ def create_mol(smiles: str) -> Chem.Mol:
     return mol
 
 
-def create_svg(mol: Chem.Mol, options: SVGOptions) -> str:
+def create_svg(mol: Chem.Mol, options: Options) -> str:
     opts = rdMolDraw2D.MolDrawOptions()
     opts.useBWAtomPalette()
+    opts.setBackgroundColour(options.backgroundColour)
+
+    for option_name, option_value in vars(options).items():
+        if option_value is None:
+            continue
+        try:
+            setattr(opts, option_name, option_value)
+        except AttributeError as e:
+            if str(e).startswith("Cannot set unknown attribute"):
+                # Skip options that don't exist in rdMolDraw2D.MolDrawOptions
+                continue
+            raise e
 
     d = rdMolDraw2D.MolDraw2DSVG(options.width, options.height)
     d.SetDrawOptions(opts)

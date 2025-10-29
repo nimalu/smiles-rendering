@@ -2,6 +2,8 @@ from xml.etree import ElementTree
 import re
 from rdkit import Chem
 
+from . import renderer
+
 
 def color_instances(svg: str):
     """
@@ -37,7 +39,7 @@ def color_instances(svg: str):
     return ElementTree.tostring(svg_root, encoding="unicode")
 
 
-def post_process_svg(svg: str, mol: Chem.Mol) -> str:
+def post_process_svg(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
     """
     Post-process the SVG output by adding instance IDs and classes.
     Each atom and bond is assigned a unique instance ID and a class based on
@@ -88,7 +90,8 @@ def post_process_svg(svg: str, mol: Chem.Mol) -> str:
             continue
 
         # remove non-atom/bond paths
-        svg_root.remove(element)
+        if options.remove_non_molecular_paths:
+            svg_root.remove(element)
 
     # remove class attributes
     for element in list(svg_root.iter()):

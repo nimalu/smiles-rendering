@@ -3,6 +3,7 @@ from collections import namedtuple
 from pathlib import Path
 from . import renderer
 from . import postprocessing
+from . import Options
 
 
 def main():
@@ -16,7 +17,6 @@ def main():
         "--png", dest="png", action="store_true", default=False, help="Output PNG files"
     )
     args = parser.parse_args()
-    print(args)
 
     input_path = Path(args.input)
     smiles = input_path.read_text().strip()
@@ -32,10 +32,10 @@ Sample = namedtuple("Sample", ["smiles", "mol", "svg", "svg_colored"])
 
 
 def create_sample(smiles: str):
+    options = Options()
     mol = renderer.create_mol(smiles)
-    options = renderer.SVGOptions()
     svg = renderer.create_svg(mol, options)
-    svg = postprocessing.post_process_svg(svg, mol)
+    svg = postprocessing.post_process_svg(svg, mol, options)
     svg_colored = postprocessing.color_instances(svg)
     return Sample(smiles, mol, svg, svg_colored)
 

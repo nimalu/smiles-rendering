@@ -41,6 +41,25 @@ def color_instances(svg: str):
 
 def post_process_svg(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
     """
+    Add semantic information to SVG molecular diagrams.
+
+    Post-processes RDKit-generated SVG by adding instance IDs and classes to
+    identify individual atoms and bonds. This enables subsequent coloring and
+    analysis of molecular fragments.
+
+    Args:
+        svg (str): Raw SVG content from RDKit
+        mol (Chem.Mol): RDKit molecule object used to generate the SVG
+        options (renderer.Options): Rendering options that affect post-processing
+
+    Returns:
+        str: Enhanced SVG with instance-id, instance-class, and bond-atoms attributes
+
+    Note:
+        This function removes non-molecular SVG paths if remove_non_molecular_paths
+        is True in the options.
+    """
+    """
     Post-process the SVG output by adding instance IDs and classes.
     Each atom and bond is assigned a unique instance ID and a class based on
     its type (element symbol for atoms, bond type for bonds).
@@ -104,6 +123,18 @@ def post_process_svg(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
 def get_atom_index(element: ElementTree.Element):
     """
     Extract the atom index from the class attribute of an SVG element.
+
+    Parses RDKit-generated class attributes to identify which atom
+    a particular SVG path element represents.
+
+    Args:
+        element (ElementTree.Element): SVG element to examine
+
+    Returns:
+        int | None: Atom index if found, None otherwise
+    """
+    """
+    Extract the atom index from the class attribute of an SVG element.
     """
     class_attr = element.get("class", "")
     match = re.search(r"atom-(\d+)", class_attr)
@@ -113,6 +144,18 @@ def get_atom_index(element: ElementTree.Element):
 
 
 def get_bond_index(element: ElementTree.Element):
+    """
+    Extract the bond index from the class attribute of an SVG element.
+
+    Parses RDKit-generated class attributes to identify which bond
+    a particular SVG path element represents.
+
+    Args:
+        element (ElementTree.Element): SVG element to examine
+
+    Returns:
+        int | None: Bond index if found, None otherwise
+    """
     """
     Extract the bond index from the class attribute of an SVG element.
     """
@@ -125,10 +168,35 @@ def get_bond_index(element: ElementTree.Element):
 
 def unique_colors():
     """
+    Generate a sequence of unique, visually distinct colors.
+
+    Uses the HSV color space with golden ratio-based spacing to generate
+    a theoretically infinite sequence of unique colors. The algorithm
+    ensures good visual separation between consecutive colors.
+
+    Yields:
+        str: Hexadecimal color codes (e.g., "#ff5733")
+
+    Note:
+        Generates at least 2500 unique colors before any potential repetition,
+        which is sufficient for most molecular visualization needs.
+    """
+    """
     Generate a sequence of unique colors (at least 2500 unique colors).
     """
 
     def hsv_to_rgb(h, s, v) -> tuple[int, int, int]:
+        """
+        Convert HSV color values to RGB.
+
+        Args:
+            h (float): Hue (0-1)
+            s (float): Saturation (0-1)
+            v (float): Value/brightness (0-1)
+
+        Returns:
+            tuple[int, int, int]: RGB values (0-1 range)
+        """
         i = int(h * 6)
         f = h * 6 - i
         p = v * (1 - s)
@@ -150,6 +218,15 @@ def unique_colors():
             return (v, p, q)
 
     def generate_colors():
+        """
+        Generate an infinite sequence of visually distinct colors.
+
+        Uses golden ratio spacing in HSV space to maximize visual separation
+        between consecutive colors.
+
+        Yields:
+            str: Hexadecimal color codes
+        """
         sat_offset = 0.0
         hue = 0
         val_offset = 0.0

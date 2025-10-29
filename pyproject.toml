@@ -1,13 +1,16 @@
 [project]
 name = "render-smiles"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Python package for rendering SMILES strings into visual molecular diagrams with fragment coloring"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "cairosvg>=2.8.2",
     "rdkit>=2025.9.1",
 ]
+
+[tool.uv]
+package = true
 
 [project.scripts]
 render-smiles = "render_smiles.main:main"

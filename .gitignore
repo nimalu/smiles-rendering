@@ -12,6 +12,8 @@ wheels/
 # VS Code settings
 .vscode/
 
-# images
+# generated data files
 *.svg
 *.png
+*.json
+*.txt

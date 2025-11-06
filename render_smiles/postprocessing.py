@@ -1,45 +1,14 @@
 from xml.etree import ElementTree
 import re
 from rdkit import Chem
+from svgpathtools import parse_path
+import numpy as np
+import svgpathtools
 
 from . import renderer
 
 
-def color_instances(svg: str):
-    """
-    Color instances in the SVG output. Each unique instance-id is assigned a unique color.
-    """
-    matches = re.finditer(r'instance-id="(\d+)"', svg)
-    instance_ids = {int(m.group(1)) for m in matches}
-    svg_root = ElementTree.fromstring(svg)
-    for color, instance_id in zip(unique_colors(), sorted(instance_ids)):
-        # find all elements with the current instance-id
-        instance_elements = []
-        for element in list(svg_root.iter()):
-            if element.get("instance-id") == str(instance_id):
-                instance_elements.append(element)
-
-        # set the color of these elements
-        for element in instance_elements:
-            # adjust style
-            style = element.get("style", "")
-            style_dict = dict(s.split(":") for s in style.split(";") if s)
-            if "stroke" in style_dict:
-                style_dict["stroke"] = color
-
-            if "fill" in style_dict and style_dict["fill"] != "none":
-                style_dict["fill"] = color
-            style = ";".join(f"{k}:{v}" for k, v in style_dict.items())
-            element.set("style", style)
-
-            # adjust fill
-            if "fill" in element.attrib:
-                element.set("fill", color)
-
-    return ElementTree.tostring(svg_root, encoding="unicode")
-
-
-def post_process_svg(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
+def annotate_svg_with_instances(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
     """
     Add semantic information to SVG molecular diagrams.
 
@@ -74,10 +43,10 @@ def post_process_svg(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
     svg_root = ElementTree.fromstring(svg)
     for element in list(svg_root.iter()):
         # only process path elements
-        if element.tag != "{http://www.w3.org/2000/svg}path":
+        if element.tag != r"{http://www.w3.org/2000/svg}path":
             continue
 
-        bond_index = get_bond_index(element)
+        bond_index = _get_bond_index(element)
         if bond_index is not None:
             instance_name = f"bond-{bond_index}"
             if instance_name not in instances:
@@ -93,7 +62,7 @@ def post_process_svg(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
             element.attrib = attrib
             continue
 
-        atom_index = get_atom_index(element)
+        atom_index = _get_atom_index(element)
         if atom_index is not None:
             instance_name = f"atom-{atom_index}"
             if instance_name not in instances:
@@ -120,7 +89,87 @@ def post_process_svg(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
     return ElementTree.tostring(svg_root, encoding="unicode")
 
 
-def get_atom_index(element: ElementTree.Element):
+def flatten_paths_to_polygons(svg: str, n_per_curve=10) -> str:
+    """
+    Convert all SVG path elements to polygon elements.
+
+    This function flattens complex path definitions into simple polygons,
+    which can be useful for certain rendering or analysis tasks.
+
+    Args:
+        svg (str): Original SVG content
+    Returns:
+        str: Modified SVG content with paths converted to polygons
+    """
+    svg_root = ElementTree.fromstring(svg)
+    for element in list(svg_root.iter()):
+        if element.tag != "{http://www.w3.org/2000/svg}path":
+            continue
+
+        path_data = element.get("d", "")
+        path = parse_path(path_data)
+        points = []
+        for segment in path:
+            if isinstance(segment, svgpathtools.path.Line):
+                points.append((segment.start.real, segment.start.imag))
+                points.append((segment.end.real, segment.end.imag))
+            else:
+                for t in np.linspace(0, 1, n_per_curve):
+                    pt = segment.point(t)
+                    points.append((pt.real, pt.imag))
+
+        # remove dupl points
+        last_point = points[0]
+        new_points = [last_point]
+        for pt in points[1:]:
+            if pt != last_point:
+                new_points.append(pt)
+                last_point = pt
+        points = new_points
+
+        polygon_points = " ".join(f"{x},{y}" for x, y in points)
+        element.set("points", polygon_points)
+        element.tag = "{http://www.w3.org/2000/svg}polygon"
+        del element.attrib["d"]
+
+    return ElementTree.tostring(svg_root, encoding="unicode")
+
+
+def color_instances(svg: str):
+    """
+    Color instances in the SVG output. Each unique instance-id is assigned a unique color.
+    """
+    matches = re.finditer(r'instance-id="(\d+)"', svg)
+    instance_ids = {int(m.group(1)) for m in matches}
+    svg_root = ElementTree.fromstring(svg)
+    for color, instance_id in zip(_unique_colors(), sorted(instance_ids)):
+        # find all elements with the current instance-id
+        instance_elements = []
+        for element in list(svg_root.iter()):
+            if element.get("instance-id") == str(instance_id):
+                instance_elements.append(element)
+
+        # set the color of these elements
+        for element in instance_elements:
+            # adjust style
+            style = element.get("style", "")
+            style_dict = dict(s.split(":") for s in style.split(";") if s)
+            if "stroke" in style_dict:
+                style_dict["stroke"] = color
+
+            if "fill" in style_dict and style_dict["fill"] != "none":
+                style_dict["fill"] = color
+            style = ";".join(f"{k}:{v}" for k, v in style_dict.items())
+            element.set("style", style)
+
+            # adjust fill
+            if "fill" in element.attrib:
+                element.set("fill", color)
+
+    return ElementTree.tostring(svg_root, encoding="unicode")
+
+
+def _get_atom_index(element: ElementTree.Element):
     """
     Extract the atom index from the class attribute of an SVG element.
 
@@ -143,7 +192,7 @@ def get_atom_index(element: ElementTree.Element):
     return None
 
 
-def get_bond_index(element: ElementTree.Element):
+def _get_bond_index(element: ElementTree.Element):
     """
     Extract the bond index from the class attribute of an SVG element.
 
@@ -166,7 +215,7 @@ def get_bond_index(element: ElementTree.Element):
     return None
 
 
-def unique_colors():
+def _unique_colors():
     """
     Generate a sequence of unique, visually distinct colors.
 

@@ -7,13 +7,11 @@ requires-python = ">=3.13"
 dependencies = [
     "cairosvg>=2.8.2",
     "rdkit>=2025.9.1",
+    "svgpathtools>=1.7.1",
 ]
 
 [tool.uv]
 package = true
-
-[project.scripts]
-render-smiles = "render_smiles.main:main"
 
 [dependency-groups]
 dev = [

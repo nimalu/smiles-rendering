@@ -1,9 +1,9 @@
-from render_smiles.postprocessing import unique_colors
+from render_smiles.postprocessing import _unique_colors
 
 
 def test_unique_colors_are_different():
     """Test that unique_colors generates different colors."""
-    color_generator = unique_colors()
+    color_generator = _unique_colors()
 
     # Generate a reasonable number of colors to test
     num_colors_to_test = 2500

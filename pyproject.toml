@@ -1,5 +1,5 @@
 [project]
-name = "render-smiles"
+name = "smiles-segmentation"
 version = "0.1.0"
 description = "A Python package for rendering SMILES strings into visual molecular diagrams with fragment coloring"
 readme = "README.md"

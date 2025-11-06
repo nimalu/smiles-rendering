@@ -1,4 +1,4 @@
-from render_smiles.postprocessing import _unique_colors
+from smiles_segmentation.postprocessing import _unique_colors
 
 
 def test_unique_colors_are_different():

@@ -8,15 +8,15 @@ with coloring based on molecular fragments.
 import argparse
 import json
 from pathlib import Path
-import render_smiles
-from render_smiles.images import svg_to_pil
-from render_smiles.postprocessing import (
+import smiles_segmentation
+from smiles_segmentation.images import svg_to_pil
+from smiles_segmentation.postprocessing import (
     annotate_svg_with_instances,
     color_instances,
     flatten_paths_to_polygons,
 )
-from render_smiles.renderer import create_mol, create_svg
-from render_smiles.yolo import svg_to_yolo_format, build_class_to_id
+from smiles_segmentation.renderer import create_mol, create_svg
+from smiles_segmentation.yolo import svg_to_yolo_format, build_class_to_id
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
     input_path = Path(args.input)
     smiles = input_path.read_text().strip()
 
-    options = render_smiles.Options()
+    options = smiles_segmentation.Options()
     mol = create_mol(smiles)
     svg = create_svg(mol, options)
     svg = annotate_svg_with_instances(svg, mol, options)

@@ -1,5 +1,5 @@
 
-# Render SMILES
+# SMILES Segmentation
 
 A Python package for rendering SMILES (Simplified Molecular Input Line Entry System) strings into visual molecular diagrams with fragment coloring.
 
@@ -21,14 +21,14 @@ uv sync
 
 ## Command Line Usage
 
-The package provides a command-line tool `render-smiles` for processing SMILES files:
+The package provides a command-line tool `smiles-segmentation` for processing SMILES files:
 
 ```bash
 # Render to SVG (default)
-uv run render-smiles smiles.smi
+uv run smiles-segmentation smiles.smi
 
 # Render to PNG
-uv run render-smiles --png smiles.smi
+uv run smiles-segmentation --png smiles.smi
 
 # This will generate:
 # - smiles.svg (standard molecular diagram)
@@ -39,7 +39,7 @@ uv run render-smiles --png smiles.smi
 ### Python API
 
 ```python
-from render_smiles import Options, create_sample
+from smiles_segmentation import Options, create_sample
 
 # Basic usage
 smiles = "CCc(c1)ccc2[n+]1ccc3c2[nH]c4c3cccc4"

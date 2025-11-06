@@ -17,3 +17,8 @@ wheels/
 *.png
 *.json
 *.txt
+
+# dataset directories
+dataset/
+test_dataset/
+*_dataset/

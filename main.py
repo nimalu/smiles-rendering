@@ -1,14 +1,7 @@
-"""
-Render SMILES (Simplified Molecular Input Line Entry System) strings to images.
-
-This module provides functionality to convert SMILES strings into visual molecular representations
-with coloring based on molecular fragments.
-"""
-
 import argparse
 import json
 from pathlib import Path
-import smiles_segmentation
+from smiles_segmentation import Options
 from smiles_segmentation.images import svg_to_pil
 from smiles_segmentation.postprocessing import (
     annotate_svg_with_instances,
@@ -27,7 +20,7 @@ def main():
     input_path = Path(args.input)
     smiles = input_path.read_text().strip()
 
-    options = smiles_segmentation.Options()
+    options = Options()
     mol = create_mol(smiles)
     svg = create_svg(mol, options)
     svg = annotate_svg_with_instances(svg, mol, options)

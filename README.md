@@ -102,36 +102,36 @@ dataset/
 
 This project uses [uv](https://docs.astral.sh/uv/) for Python package management. Make sure you have `uv` installed before running the script.
 
-#### Basic Usage
+#### Configuration
 
-Generate a dataset with default settings (100 training, 20 validation samples):
+The script uses constants defined at the top of `generate_dataset.py`. Edit these values to customize the dataset generation:
+
+```python
+# Dataset configuration constants
+OUTPUT_DIR = Path("./dataset")
+NUM_TRAIN_SAMPLES = 100
+NUM_VAL_SAMPLES = 20
+
+# Randomization ranges
+ROTATION_RANGE = (0, 360)
+WIDTH_RANGE = (512, 768)
+HEIGHT_RANGE = (512, 768)
+BASE_FONT_SIZE_RANGE = (0.5, 0.7)
+ATOM_LABEL_PADDING_RANGE = (0.05, 0.15)
+BOND_LINE_WIDTH_RANGE = (1.5, 2.5)
+MULTIPLE_BOND_OFFSET_RANGE = (0.1, 0.2)
+
+# Random seed for reproducibility (None for random)
+RANDOM_SEED = None
+```
+
+#### Running the Script
+
+Generate the dataset with the configured settings:
 
 ```bash
 uv run generate_dataset.py
 ```
-
-#### Custom Configuration
-
-```bash
-uv run generate_dataset.py \
-    --output ./my_dataset \
-    --train 500 \
-    --val 100 \
-    --rotation-min 0 \
-    --rotation-max 360 \
-    --image-size 640 \
-    --seed 42
-```
-
-#### Arguments
-
-- `--output`: Output directory for the dataset (default: `./dataset`)
-- `--train`: Number of training samples (default: 100)
-- `--val`: Number of validation samples (default: 20)
-- `--rotation-min`: Minimum rotation angle in degrees (default: 0)
-- `--rotation-max`: Maximum rotation angle in degrees (default: 360)
-- `--image-size`: Image width and height in pixels (default: 640)
-- `--seed`: Random seed for reproducibility (default: None)
 
 ### Dataset Content
 

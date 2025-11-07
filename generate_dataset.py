@@ -5,7 +5,6 @@ This script creates a dataset with molecular structure images and corresponding
 YOLO format annotations for instance segmentation training.
 """
 
-import argparse
 import random
 from pathlib import Path
 from typing import List
@@ -18,6 +17,24 @@ from smiles_segmentation.postprocessing import (
 )
 from smiles_segmentation.renderer import create_mol, create_svg
 from smiles_segmentation.yolo import svg_to_yolo_format, build_class_to_id
+
+
+# Dataset configuration constants
+OUTPUT_DIR = Path("./dataset")
+NUM_TRAIN_SAMPLES = 100
+NUM_VAL_SAMPLES = 20
+
+# Randomization ranges
+ROTATION_RANGE = (0, 360)
+WIDTH_RANGE = (512, 768)
+HEIGHT_RANGE = (512, 768)
+BASE_FONT_SIZE_RANGE = (0.5, 0.7)
+ATOM_LABEL_PADDING_RANGE = (0.05, 0.15)
+BOND_LINE_WIDTH_RANGE = (1.5, 2.5)
+MULTIPLE_BOND_OFFSET_RANGE = (0.1, 0.2)
+
+# Random seed for reproducibility (None for random)
+RANDOM_SEED = None
 
 
 # Common molecules for dataset diversity
@@ -80,7 +97,6 @@ COMMON_MOLECULES = [
 
 def generate_sample(
     smiles: str,
-    name: str,
     output_dir: Path,
     sample_id: int,
     rotation_range: tuple[int, int] = (0, 360),
@@ -96,7 +112,6 @@ def generate_sample(
 
     Args:
         smiles: SMILES string of the molecule
-        name: Name identifier for the molecule
         output_dir: Directory to save the output files
         sample_id: Unique ID for this sample
         rotation_range: Min and max rotation angles in degrees
@@ -238,7 +253,6 @@ def generate_dataset(
             # Generate image
             class_mapping = generate_sample(
                 smiles=smiles,
-                name=name,
                 output_dir=image_output_dir,
                 sample_id=i,
                 rotation_range=rotation_range,
@@ -273,7 +287,6 @@ def generate_dataset(
             # Generate image
             class_mapping = generate_sample(
                 smiles=smiles,
-                name=name,
                 output_dir=image_output_dir,
                 sample_id=i,
                 rotation_range=rotation_range,
@@ -332,132 +345,18 @@ names:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate YOLO format instance segmentation dataset from SMILES"
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path("./dataset"),
-        help="Output directory for the dataset (default: ./dataset)",
-    )
-    parser.add_argument(
-        "--train",
-        type=int,
-        default=100,
-        help="Number of training samples (default: 100)",
-    )
-    parser.add_argument(
-        "--val",
-        type=int,
-        default=20,
-        help="Number of validation samples (default: 20)",
-    )
-    parser.add_argument(
-        "--rotation-min",
-        type=int,
-        default=0,
-        help="Minimum rotation angle in degrees (default: 0)",
-    )
-    parser.add_argument(
-        "--rotation-max",
-        type=int,
-        default=360,
-        help="Maximum rotation angle in degrees (default: 360)",
-    )
-    parser.add_argument(
-        "--width-min",
-        type=int,
-        default=512,
-        help="Minimum image width in pixels (default: 512)",
-    )
-    parser.add_argument(
-        "--width-max",
-        type=int,
-        default=768,
-        help="Maximum image width in pixels (default: 768)",
-    )
-    parser.add_argument(
-        "--height-min",
-        type=int,
-        default=512,
-        help="Minimum image height in pixels (default: 512)",
-    )
-    parser.add_argument(
-        "--height-max",
-        type=int,
-        default=768,
-        help="Maximum image height in pixels (default: 768)",
-    )
-    parser.add_argument(
-        "--font-size-min",
-        type=float,
-        default=0.5,
-        help="Minimum base font size (default: 0.5)",
-    )
-    parser.add_argument(
-        "--font-size-max",
-        type=float,
-        default=0.7,
-        help="Maximum base font size (default: 0.7)",
-    )
-    parser.add_argument(
-        "--atom-padding-min",
-        type=float,
-        default=0.05,
-        help="Minimum additional atom label padding (default: 0.05)",
-    )
-    parser.add_argument(
-        "--atom-padding-max",
-        type=float,
-        default=0.15,
-        help="Maximum additional atom label padding (default: 0.15)",
-    )
-    parser.add_argument(
-        "--bond-width-min",
-        type=float,
-        default=1.5,
-        help="Minimum bond line width (default: 1.5)",
-    )
-    parser.add_argument(
-        "--bond-width-max",
-        type=float,
-        default=2.5,
-        help="Maximum bond line width (default: 2.5)",
-    )
-    parser.add_argument(
-        "--bond-offset-min",
-        type=float,
-        default=0.1,
-        help="Minimum multiple bond offset (default: 0.1)",
-    )
-    parser.add_argument(
-        "--bond-offset-max",
-        type=float,
-        default=0.2,
-        help="Maximum multiple bond offset (default: 0.2)",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        help="Random seed for reproducibility (default: None)",
-    )
-
-    args = parser.parse_args()
-
     generate_dataset(
-        output_base=args.output,
-        num_train=args.train,
-        num_val=args.val,
-        rotation_range=(args.rotation_min, args.rotation_max),
-        width_range=(args.width_min, args.width_max),
-        height_range=(args.height_min, args.height_max),
-        base_font_size_range=(args.font_size_min, args.font_size_max),
-        atom_label_padding_range=(args.atom_padding_min, args.atom_padding_max),
-        bond_line_width_range=(args.bond_width_min, args.bond_width_max),
-        multiple_bond_offset_range=(args.bond_offset_min, args.bond_offset_max),
-        seed=args.seed,
+        output_base=OUTPUT_DIR,
+        num_train=NUM_TRAIN_SAMPLES,
+        num_val=NUM_VAL_SAMPLES,
+        rotation_range=ROTATION_RANGE,
+        width_range=WIDTH_RANGE,
+        height_range=HEIGHT_RANGE,
+        base_font_size_range=BASE_FONT_SIZE_RANGE,
+        atom_label_padding_range=ATOM_LABEL_PADDING_RANGE,
+        bond_line_width_range=BOND_LINE_WIDTH_RANGE,
+        multiple_bond_offset_range=MULTIPLE_BOND_OFFSET_RANGE,
+        seed=RANDOM_SEED,
     )
 
 

@@ -8,10 +8,8 @@ dependencies = [
     "cairosvg>=2.8.2",
     "rdkit>=2025.9.1",
     "svgpathtools>=1.7.1",
+    "tqdm>=4.67.1",
 ]
-
-[tool.uv]
-package = true
 
 [dependency-groups]
 dev = [

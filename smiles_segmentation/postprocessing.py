@@ -7,6 +7,37 @@ import svgpathtools
 
 from . import renderer
 
+def extract_classes_from_svg(svg: str) -> set[str]:
+    classes = set()
+    svg_root = ElementTree.fromstring(svg)
+    for element in list(svg_root.iter()):
+        instance_class = element.get("instance-class")
+        if instance_class is not None:
+            classes.add(instance_class)
+    return classes
+
+
+def annotate_svg_with_smiles(svg: str, smiles: str) -> str:
+    """
+    Add SMILES string as metadata to SVG molecular diagrams.
+
+    Inserts a <metadata> element containing the SMILES string at the
+    beginning of the SVG content.
+
+    Args:
+        svg (str): Raw SVG content from RDKit
+        smiles (str): SMILES string representing the molecule
+
+    Returns:
+        str: Enhanced SVG with SMILES metadata
+    """
+    svg_root = ElementTree.fromstring(svg)
+    metadata_elem = ElementTree.Element("metadata")
+    smiles_elem = ElementTree.SubElement(metadata_elem, "smiles")
+    smiles_elem.text = smiles
+    svg_root.insert(0, metadata_elem)
+    return ElementTree.tostring(svg_root, encoding="unicode")
+
 
 def annotate_svg_with_instances(svg: str, mol: Chem.Mol, options: renderer.Options) -> str:
     """
@@ -91,13 +122,16 @@ def annotate_svg_with_instances(svg: str, mol: Chem.Mol, options: renderer.Optio
 
 def flatten_paths_to_polygons(svg: str, n_per_curve=10) -> str:
     """
-    Convert all SVG path elements to polygon elements.
+    Convert all SVG path elements to polygon elements with stroke width applied.
 
     This function flattens complex path definitions into simple polygons,
-    which can be useful for certain rendering or analysis tasks.
+    expanding stroked paths into filled polygons that represent the same visual area.
+    Paths with stroke width are converted to outline polygons; filled paths are
+    converted directly.
 
     Args:
         svg (str): Original SVG content
+        n_per_curve (int): Number of points to sample per curved segment
     Returns:
         str: Modified SVG content with paths converted to polygons
     """
@@ -108,29 +142,115 @@ def flatten_paths_to_polygons(svg: str, n_per_curve=10) -> str:
 
         path_data = element.get("d", "")
         path = parse_path(path_data)
+
+        # Extract stroke width from style or stroke-width attribute
+        stroke_width = 0
+        style = element.get("style", "")
+        style_dict = dict(s.split(":") for s in style.split(";") if s and ":" in s)
+
+        if "stroke-width" in style_dict:
+            stroke_width = float(style_dict["stroke-width"].replace("px", ""))
+        elif "stroke-width" in element.attrib:
+            stroke_width = float(element.attrib["stroke-width"].replace("px", ""))
+
+        # Sample points along the path
         points = []
         for segment in path:
             if isinstance(segment, svgpathtools.path.Line):
                 points.append((segment.start.real, segment.start.imag))
-                points.append((segment.end.real, segment.end.imag))
             else:
                 for t in np.linspace(0, 1, n_per_curve):
                     pt = segment.point(t)
                     points.append((pt.real, pt.imag))
 
-        # remove dupl points
-        last_point = points[0]
-        new_points = [last_point]
-        for pt in points[1:]:
-            if pt != last_point:
-                new_points.append(pt)
-                last_point = pt
-        points = new_points
+        # Add final point
+        final_pt = path[-1].end
+        points.append((final_pt.real, final_pt.imag))
+
+        # Remove duplicate consecutive points
+        if points:
+            new_points = [points[0]]
+            for pt in points[1:]:
+                if pt != new_points[-1]:
+                    new_points.append(pt)
+            points = new_points
+
+        # If stroke width exists, create outline polygon
+        if stroke_width > 0:
+            # Calculate perpendicular offsets for each point
+            outline_points = []
+            half_width = stroke_width / 2
+
+            for i in range(len(points)):
+                x, y = points[i]
+
+                # Determine tangent direction
+                if i == 0:
+                    dx = points[i + 1][0] - x
+                    dy = points[i + 1][1] - y
+                elif i == len(points) - 1:
+                    dx = x - points[i - 1][0]
+                    dy = y - points[i - 1][1]
+                else:
+                    dx = points[i + 1][0] - points[i - 1][0]
+                    dy = points[i + 1][1] - points[i - 1][1]
+
+                # Normalize and get perpendicular
+                length = np.sqrt(dx * dx + dy * dy)
+                if length > 0:
+                    dx /= length
+                    dy /= length
+
+                # Perpendicular vector
+                perp_x = -dy
+                perp_y = dx
+
+                # Add offset points
+                outline_points.append((x + perp_x * half_width, y + perp_y * half_width))
+
+            # Add reverse side
+            for i in range(len(points) - 1, -1, -1):
+                x, y = points[i]
+
+                if i == 0:
+                    dx = points[i + 1][0] - x
+                    dy = points[i + 1][1] - y
+                elif i == len(points) - 1:
+                    dx = x - points[i - 1][0]
+                    dy = y - points[i - 1][1]
+                else:
+                    dx = points[i + 1][0] - points[i - 1][0]
+                    dy = points[i + 1][1] - points[i - 1][1]
+
+                length = np.sqrt(dx * dx + dy * dy)
+                if length > 0:
+                    dx /= length
+                    dy /= length
+
+                perp_x = -dy
+                perp_y = dx
+
+                outline_points.append((x - perp_x * half_width, y - perp_y * half_width))
+
+            points = outline_points
 
         polygon_points = " ".join(f"{x},{y}" for x, y in points)
         element.set("points", polygon_points)
         element.tag = "{http://www.w3.org/2000/svg}polygon"
-        del element.attrib["d"]
+
+        # Remove stroke from style and set fill
+        if "stroke" in style_dict:
+            style_dict["fill"] = style_dict.get("stroke", "#000000")
+            del style_dict["stroke"]
+        if "stroke-width" in style_dict:
+            del style_dict["stroke-width"]
+
+        element.set("style", ";".join(f"{k}:{v}" for k, v in style_dict.items()))
+
+        if "d" in element.attrib:
+            del element.attrib["d"]
+        if "stroke-width" in element.attrib:
+            del element.attrib["stroke-width"]
 
     return ElementTree.tostring(svg_root, encoding="unicode")
 

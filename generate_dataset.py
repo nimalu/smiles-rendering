@@ -185,6 +185,8 @@ def generate_dataset(
         classes.update(extract_classes_from_svg(svg))
 
     class_to_id = {cls: idx for idx, cls in enumerate(sorted(classes))}
+    with open(output_base / "classes.json", "w") as f:
+        json.dump(class_to_id, f, indent=4)
 
     for i in tqdm.tqdm(range(num_samples), desc="Generating PNGs"):
         image_path = images_dir / f"{i:06d}.svg"
@@ -201,6 +203,10 @@ def generate_dataset(
         label_path = labels_dir / f"{i:06d}.json"
         with open(label_path, "w") as f:
             json.dump(sample, f, indent=4)
+    
+    for i in tqdm.tqdm(range(num_samples), desc="Cleaning up SVGs"):
+        image_path = images_dir / f"{i:06d}.svg"
+        image_path.unlink()  # Remove SVG file
 
 
 def main():

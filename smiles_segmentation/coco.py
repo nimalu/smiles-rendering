@@ -58,7 +58,7 @@ def extract_coco_annotations_from_svg(svg: str, class_to_id: dict[str, int]) -> 
         max_x = max(point[0] for path in paths for point in path)
         min_y = min(point[1] for path in paths for point in path)
         max_y = max(point[1] for path in paths for point in path)
-        bbox = [min_x, min_y, max_x - min_x, max_y - min_y]
+        bbox = [min_x, min_y, max_x, max_y]
 
         # flatten paths for segmentation
         segmentation = []
